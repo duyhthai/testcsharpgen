@@ -47,6 +47,22 @@ namespace WEB_API.Controllers
             }
         }
 
+        public async Task<Product> Get(int id, string name)
+        {
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                if (conn.State == System.Data.ConnectionState.Closed)
+                {
+                    conn.Open();
+                }
+                var parameters = new DynamicParameters();
+                parameters.Add("@id", id);
+                parameters.Add("@name", name);
+                var result = await conn.QueryAsync<Product>("Search_Product", parameters, null, null, System.Data.CommandType.StoredProcedure);
+                return result.Single();
+            }
+        }
+
         // POST api/Product
         [HttpPost]
         public async Task<int> Post([FromBody] Product product)
