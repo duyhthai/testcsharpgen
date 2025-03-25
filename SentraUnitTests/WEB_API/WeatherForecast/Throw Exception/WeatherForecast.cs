@@ -6,23 +6,23 @@ namespace WEB_API.Tests
     public class WeatherForecastTests
     {
         [Fact]
-        public void SetTemperatureC_NegativeValue_ThrowsArgumentException()
+        public void SetTemperatureC_WithNegativeValue_ThrowsArgumentException()
         {
-            // Arrange
             var forecast = new WeatherForecast();
-            int negativeTemperature = -100;
+            Assert.Throws<ArgumentException>(() => forecast.TemperatureC = -100);
+        }
 
-            // Act & Assert
-            Assert.Throws<ArgumentException>(() => forecast.TemperatureC = negativeTemperature);
+        [Fact]
+        public void GetTemperatureF_WithInvalidTemperatureC_ThrowsInvalidOperationException()
+        {
+            var forecast = new WeatherForecast { TemperatureC = -100 };
+            Assert.Throws<InvalidOperationException>(() => _ = forecast.TemperatureF);
         }
 
         [Fact]
         public void SetSummary_NullValue_ThrowsArgumentNullException()
         {
-            // Arrange
             var forecast = new WeatherForecast();
-
-            // Act & Assert
             Assert.Throws<ArgumentNullException>(() => forecast.Summary = null);
         }
     }

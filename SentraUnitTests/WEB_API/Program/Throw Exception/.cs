@@ -1,53 +1,30 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
+using System;
 using Xunit;
 
-public class WebApplicationTests
+public class StartupTests
 {
     [Fact]
-    public void Test_WebApplication_Builder_ConfiguresServices()
+    public void ConfigureServices_ThrowsException_WhenNullArgumentProvided()
     {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
         // Arrange
-        var services = new ServiceCollection();
-        builder.Services.AddSingleton(services);
+        var builder = new WebApplicationBuilder(new string[] { });
 
-        // Act
-        builder.ConfigureServices(services => services.AddControllers());
-
-        // Assert
-        Assert.Contains(typeof(MvcServiceCollectionExtensions), builder.Services);
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => builder.Services.AddControllers(null));
+        Assert.Throws<ArgumentNullException>(() => builder.Services.AddEndpointsApiExplorer(null));
+        Assert.Throws<ArgumentNullException>(() => builder.Services.AddSwaggerGen(null));
     }
 
     [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithNullActionThrowsException()
+    public void MapControllers_ThrowsException_WhenNullArgumentProvided()
     {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
         // Arrange
-        var app = builder.Build();
+        var app = new WebApplication(new WebApplicationOptions { EnvironmentName = "Development" });
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-        {
-            app.MapGet("/test", null);
-        });
-    }
-
-    [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithEmptyPathThrowsException()
-    {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
-        // Arrange
-        var app = builder.Build();
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() =>
-        {
-            app.MapGet("", () => "Hello World");
-        });
+        Assert.Throws<ArgumentNullException>(() => app.MapControllers(null));
     }
 }

@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Data.SqlClient;
+using WEB_API.Models;
+using Dapper;
 using Xunit;
 
 public class ProductControllerTests
@@ -18,32 +21,41 @@ public class ProductControllerTests
     }
 
     [Fact]
-    public async Task Post_WithNullProduct_ThrowsArgumentNullException()
+    public async Task Post_WithNullProduct_ReturnsBadRequest()
     {
         // Arrange
-        var product = null;
+        var request = null as Product;
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _controller.Post(product));
+        // Act
+        var response = await _controller.Post(request);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(response);
     }
 
     [Fact]
-    public async Task Post_WithInvalidSku_ThrowsArgumentException()
+    public async Task Post_WithInvalidSku_ReturnsBadRequest()
     {
         // Arrange
-        var product = new Product { Sku = "invalid_sku" };
+        var product = new Product { Sku = "invalid_sku", Content = "test content", Price = 10.0m, IsActive = true, ImageUrl = "http://example.com/image.jpg" };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => _controller.Post(product));
+        // Act
+        var response = await _controller.Post(product);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(response);
     }
 
     [Fact]
-    public async Task Post_WithNegativePrice_ThrowsArgumentOutOfRangeException()
+    public async Task Post_WithNegativePrice_ReturnsBadRequest()
     {
         // Arrange
-        var product = new Product { Price = -10.0m };
+        var product = new Product { Sku = "valid_sku", Content = "test content", Price = -10.0m, IsActive = true, ImageUrl = "http://example.com/image.jpg" };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => _controller.Post(product));
+        // Act
+        var response = await _controller.Post(product);
+
+        // Assert
+        Assert.IsType<BadRequestObjectResult>(response);
     }
 }

@@ -1,77 +1,49 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Threading.Tasks;
 using Xunit;
 
 public class WebApplicationTests
 {
     [Fact]
-    public async Task Test_WebApplication_Builder_ConfiguresServices()
+    public void ConfigureServices_AddsControllers()
     {
         // Arrange
-        var args = new string[] { };
-        var builder = WebApplication.CreateBuilder(args);
+        var builder = new WebApplicationBuilder(new string[] { });
 
         // Act
         builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
 
         // Assert
-        Assert.NotNull(builder.Services);
-        Assert.Contains(typeof(MvcServiceCollectionExtensions), builder.Services.GetRequiredService<IServiceCollection>().Where(s => s.ServiceType == typeof(IMvcCoreBuilder)));
-        Assert.Contains(typeof(EndpointsApiExplorerServiceCollectionExtensions), builder.Services.GetRequiredService<IServiceCollection>().Where(s => s.ServiceType == typeof(IEndpointsApiExplorerBuilder)));
-        Assert.Contains(typeof(SwaggerGenServiceCollectionExtensions), builder.Services.GetRequiredService<IServiceCollection>().Where(s => s.ServiceType == typeof(ISwaggerGenOptions));
+        var serviceDescriptor = builder.Services.FirstOrDefault(d => d.ServiceType == typeof(Microsoft.AspNetCore.Mvc.Controllers.ControllerActionInvokerProvider));
+        Assert.NotNull(serviceDescriptor);
     }
 
     [Fact]
-    public async Task Test_WebApplication_BuildsAndRuns()
+    public void ConfigureServices_AddsEndpointsApiExplorer()
     {
         // Arrange
-        var args = new string[] { };
-        var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        var app = builder.Build();
+        var builder = new WebApplicationBuilder(new string[] { });
 
         // Act
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
-        }
-        app.UseHttpsRedirection();
-        app.UseAuthorization();
-        app.MapControllers();
+        builder.Services.AddEndpointsApiExplorer();
 
         // Assert
-        Assert.NotNull(app);
-        Assert.True(app.Environment.IsDevelopment());
+        var serviceDescriptor = builder.Services.FirstOrDefault(d => d.ServiceType == typeof(Microsoft.OpenApi.Models.OpenApiDocument));
+        Assert.NotNull(serviceDescriptor);
     }
 
     [Fact]
-    public async Task Test_WebApplication_RunsInProductionMode()
+    public void ConfigureServices_AddsSwaggerGen()
     {
         // Arrange
-        var args = new string[] { "--environment", "Production" };
-        var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        var app = builder.Build();
+        var builder = new WebApplicationBuilder(new string[] { });
 
         // Act
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseHttpsRedirection();
-            app.UseAuthorization();
-            app.MapControllers();
-        }
+        builder.Services.AddSwaggerGen();
 
         // Assert
-        Assert.NotNull(app);
-        Assert.False(app.Environment.IsDevelopment());
+        var serviceDescriptor = builder.Services.FirstOrDefault(d => d.ServiceType == typeof(Microsoft.OpenApi.Models.OpenApiDocument));
+        Assert.NotNull(serviceDescriptor);
     }
 }

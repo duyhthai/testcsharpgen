@@ -2,48 +2,26 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-public class WebApplicationTests
+public class EdgeTests
 {
     [Fact]
-    public void Test_WebApplication_Builder_ConfiguresServices()
+    public void MapControllers_WithEmptyServiceCollection_ThrowsInvalidOperationException()
     {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
         // Arrange
         var services = new ServiceCollection();
-        builder.Services = services;
+        var provider = services.BuildServiceProvider();
 
-        // Act
-        builder.ConfigureServices();
-
-        // Assert
-        Assert.Collection(services,
-            service => Assert.Equal(typeof(MvcServiceCollectionExtensions), service.ImplementationType),
-            service => Assert.Equal(typeof(EndpointsApiExplorerServiceCollectionExtensions), service.ImplementationType),
-            service => Assert.Equal(typeof(SwaggerGenServiceCollectionExtensions), service.ImplementationType));
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<IEndpointRouteBuilder>().MapControllers());
     }
 
     [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithNullActionThrowsException()
+    public void MapControllers_WithNullArgument_ThrowsArgumentNullException()
     {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
         // Arrange
-        var app = builder.Build();
+        IEndpointRouteBuilder endpointRouteBuilder = null;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => app.MapControllers(null));
-    }
-
-    [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithEmptyPathThrowsException()
-    {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
-        // Arrange
-        var app = builder.Build();
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => app.MapControllers(""));
+        Assert.Throws<ArgumentNullException>(() => endpointRouteBuilder.MapControllers());
     }
 }
