@@ -2,58 +2,47 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 using WEB_API.Models;
 using Dapper;
+using Moq;
 using Xunit;
 
 public class ProductControllerTests
 {
-    private readonly string _connectionString = "YourConnectionStringHere";
-
     [Fact]
-    public async Task Get_ThrowsExceptionOnInvalidId()
+    public async Task Get_ThrowsExceptionForInvalidConnectionString()
     {
         // Arrange
         var controller = new ProductController();
-        int invalidId = -1;
+        _connectionString = "invalid_connection_string";
+        var mockDapper = new Mock<IDapper>();
+        controller.Database = mockDapper.Object;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(invalidId));
+        await Assert.ThrowsAsync<SqlException>(() => controller.Get(1));
     }
 
     [Fact]
-    public async Task Get_ThrowsExceptionOnSqlError()
+    public async Task Get_ThrowsExceptionForEmptyConnectionString()
     {
         // Arrange
         var controller = new ProductController();
-        int id = 1; // Assuming this ID exists in your database
-        var mockConnection = new Mock<SqlConnection>();
-        mockConnection.Setup(conn => conn.Open()).Throws(new SqlException());
-        controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext(),
-            RouteData = new Microsoft.AspNetCore.Routing.RouteData()
-        };
-        controller.DatabaseContext = mockConnection.Object;
+        _connectionString = string.Empty;
+        var mockDapper = new Mock<IDapper>();
+        controller.Database = mockDapper.Object;
 
         // Act & Assert
-        await Assert.ThrowsAsync<SqlException>(() => controller.Get(id));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(1));
     }
 
     [Fact]
-    public async Task Get_ThrowsExceptionOnEmptyResult()
+    public async Task Get_ThrowsExceptionForInvalidIdType()
     {
         // Arrange
         var controller = new ProductController();
-        int nonExistentId = 99999; // Assuming this ID does not exist in your database
-        var mockConnection = new Mock<SqlConnection>();
-        mockConnection.Setup(conn => conn.Open());
-        controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext(),
-            RouteData = new Microsoft.AspNetCore.Routing.RouteData()
-        };
-        controller.DatabaseContext = mockConnection.Object;
+        _connectionString = "valid_connection_string";
+        var mockDapper = new Mock<IDapper>();
+        controller.Database = mockDapper.Object;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(nonExistentId));
+        await Assert.ThrowsAsync<ArgumentException>(() => controller.Get(-1));
     }
 }

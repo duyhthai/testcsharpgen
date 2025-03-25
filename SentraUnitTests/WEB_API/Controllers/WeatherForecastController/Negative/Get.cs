@@ -15,24 +15,22 @@ public class WeatherForecastControllerTests
     }
 
     [Fact]
-    public void Get_WithNullSummary_ReturnsInternalServerError()
+    public void Get_WithNullSummariesArray_ReturnsInternalServerError()
     {
         // Arrange
-        var summaries = new string[] { null };
         var controller = new WeatherForecastController();
-        controller.GetType().GetProperty("Summaries").SetValue(controller, summaries);
+        typeof(WeatherForecastController).GetProperty("Summaries", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(controller, null);
 
         // Act & Assert
         var result = Assert.ThrowsAsync<InternalServerErrorObjectResult>(() => controller.Get());
     }
 
     [Fact]
-    public void Get_WithEmptySummary_ReturnsInternalServerError()
+    public void Get_WithEmptySummariesArray_ReturnsInternalServerError()
     {
         // Arrange
-        var summaries = new string[] { "" };
         var controller = new WeatherForecastController();
-        controller.GetType().GetProperty("Summaries").SetValue(controller, summaries);
+        typeof(WeatherForecastController).GetProperty("Summaries", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(controller, new string[] { });
 
         // Act & Assert
         var result = Assert.ThrowsAsync<InternalServerErrorObjectResult>(() => controller.Get());

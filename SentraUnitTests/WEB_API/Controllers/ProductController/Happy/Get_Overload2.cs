@@ -2,78 +2,72 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using WEB_API.Controllers;
 using WEB_API.Models;
+using Dapper;
+using System.Data.SqlClient;
+using System.Threading.Tasks;
 using Xunit;
 
-namespace WEB_API.Tests.Controllers
+public class ProductControllerTests
 {
-    public class ProductControllerTests
+    [Fact]
+    public async Task Get_ReturnsProductWithValidId()
     {
-        [Fact]
-        public async Task Get_ReturnsProductWithValidId()
-        {
-            // Arrange
-            var mockConnection = new Mock<SqlConnection>();
-            mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-            mockConnection.Setup(conn => conn.Open()).Verifiable();
-            mockConnection.Setup(conn => conn.QueryAsync<Product>("Get_Product_ById", It.IsAny<DynamicParameters>(), null, null, System.Data.CommandType.StoredProcedure))
-                          .ReturnsAsync(new List<Product> { new Product { Id = 1, Name = "TestProduct" } });
+        // Arrange
+        var mockConnection = new Mock<SqlConnection>();
+        mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
+        mockConnection.Setup(conn => conn.Open()).Verifiable();
 
-            var controller = new ProductController(mockConnection.Object)
-            {
-                _connectionString = "FakeConnectionString"
-            };
+        var mockDapper = new Mock<IDapper>();
+        mockDapper.Setup(dapper => dapper.QueryAsync<Product>("Get_Product_ById", It.IsAny<DynamicParameters>(), null, null, System.Data.CommandType.StoredProcedure)).ReturnsAsync(new List<Product> { new Product { Id = 1, Name = "TestProduct" } });
 
-            // Act
-            var result = await controller.Get(1);
+        var controller = new ProductController(mockConnection.Object, mockDapper.Object);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(1, result.Id);
-            Assert.Equal("TestProduct", result.Name);
-            mockConnection.Verify(conn => conn.Open(), Times.Once());
-        }
+        // Act
+        var result = await controller.Get(1);
 
-        [Fact]
-        public async Task Get_ReturnsNullForNonExistentId()
-        {
-            // Arrange
-            var mockConnection = new Mock<SqlConnection>();
-            mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-            mockConnection.Setup(conn => conn.Open()).Verifiable();
-            mockConnection.Setup(conn => conn.QueryAsync<Product>("Get_Product_ById", It.IsAny<DynamicParameters>(), null, null, System.Data.CommandType.StoredProcedure))
-                          .ReturnsAsync(new List<Product>());
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(1, result.Id);
+        Assert.Equal("TestProduct", result.Name);
+        mockConnection.Verify(conn => conn.Open(), Times.Once());
+        mockDapper.Verify(dapper => dapper.QueryAsync<Product>("Get_Product_ById", It.IsAny<DynamicParameters>(), null, null, System.Data.CommandType.StoredProcedure), Times.Once());
+    }
 
-            var controller = new ProductController(mockConnection.Object)
-            {
-                _connectionString = "FakeConnectionString"
-            };
+    [Fact]
+    public async Task Get_ReturnsNullForNonExistentId()
+    {
+        // Arrange
+        var mockConnection = new Mock<SqlConnection>();
+        mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
+        mockConnection.Setup(conn => conn.Open()).Verifiable();
 
-            // Act
-            var result = await controller.Get(2);
+        var mockDapper = new Mock<IDapper>();
+        mockDapper.Setup(dapper => dapper.QueryAsync<Product>("Get_Product_ById", It.IsAny<DynamicParameters>(), null, null, System.Data.CommandType.StoredProcedure)).ReturnsAsync(new List<Product>());
 
-            // Assert
-            Assert.Null(result);
-            mockConnection.Verify(conn => conn.Open(), Times.Once());
-        }
+        var controller = new ProductController(mockConnection.Object, mockDapper.Object);
 
-        [Fact]
-        public async Task Get_ThrowsExceptionOnSqlError()
-        {
-            // Arrange
-            var mockConnection = new Mock<SqlConnection>();
-            mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-            mockConnection.Setup(conn => conn.Open()).Verifiable();
-            mockConnection.Setup(conn => conn.QueryAsync<Product>("Get_Product_ById", It.IsAny<DynamicParameters>(), null, null, System.Data.CommandType.StoredProcedure))
-                          .ThrowsAsync(new SqlException());
+        // Act
+        var result = await controller.Get(2);
 
-            var controller = new ProductController(mockConnection.Object)
-            {
-                _connectionString = "FakeConnectionString"
-            };
+        // Assert
+        Assert.Null(result);
+        mockConnection.Verify(conn => conn.Open(), Times.Once());
+        mockDapper.Verify(dapper => dapper.QueryAsync<Product>("Get_Product_ById", It.IsAny<DynamicParameters>(), null, null, System.Data.CommandType.StoredProcedure), Times.Once());
+    }
 
-            // Act & Assert
-            await Assert.ThrowsAsync<SqlException>(() => controller.Get(1));
-            mockConnection.Verify(conn => conn.Open(), Times.Once());
-        }
+    [Fact]
+    public async Task Get_ThrowsExceptionForInvalidConnectionString()
+    {
+        // Arrange
+        var mockConnection = new Mock<SqlConnection>();
+        mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
+        mockConnection.Setup(conn => conn.Open()).Throws(new SqlException());
+
+        var mockDapper = new Mock<IDapper>();
+
+        var controller = new ProductController(mockConnection.Object, mockDapper.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<SqlException>(() => controller.Get(1));
     }
 }

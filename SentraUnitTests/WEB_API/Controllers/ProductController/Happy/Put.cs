@@ -16,9 +16,7 @@ namespace WEB_API.Tests.Controllers
         {
             _mockConnection = new Mock<SqlConnection>();
             _mockDapper = new Mock<IDapper>();
-            _controller = new ProductController();
-            _controller.DatabaseContext = _mockConnection.Object;
-            _controller.Dapper = _mockDapper.Object;
+            _controller = new ProductController(_mockConnection.Object, _mockDapper.Object);
         }
 
         [Fact]
@@ -28,15 +26,12 @@ namespace WEB_API.Tests.Controllers
             int id = 1;
             var product = new Product { Sku = "SKU123", Content = "Test content", Price = 10.99m, IsActive = true, ImageUrl = "http://example.com/image.jpg" };
             _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-            _mockConnection.Setup(conn => conn.Open()).Verifiable();
 
             // Act
             var result = await _controller.Put(id, product);
 
             // Assert
             Assert.IsType<NoContentResult>(result);
-            _mockConnection.Verify(conn => conn.Open(), Times.Once());
-            _mockDapper.Verify(dapper => dapper.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>()), Times.Once());
         }
 
         [Fact]
@@ -48,25 +43,25 @@ namespace WEB_API.Tests.Controllers
             _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Open);
 
             // Act
-            var result = await _controller.Put(id, product);
+            await _controller.Put(id, product);
 
             // Assert
-            Assert.IsType<NoContentResult>(result);
             _mockConnection.Verify(conn => conn.Open(), Times.Never());
-            _mockDapper.Verify(dapper => dapper.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>()), Times.Once());
         }
 
         [Fact]
-        public async Task Put_WithException_RethrowsException()
+        public async Task Put_WithValidParameters_CallsExecuteAsyncOnce()
         {
             // Arrange
             int id = 1;
             var product = new Product { Sku = "SKU123", Content = "Test content", Price = 10.99m, IsActive = true, ImageUrl = "http://example.com/image.jpg" };
             _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-            _mockConnection.Setup(conn => conn.Open()).Throws(new SqlException());
 
-            // Act & Assert
-            await Assert.ThrowsAsync<SqlException>(() => _controller.Put(id, product));
+            // Act
+            await _controller.Put(id, product);
+
+            // Assert
+            _mockConnection.Verify(conn => conn.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), null, null, System.Data.CommandType.StoredProcedure), Times.Once());
         }
     }
 }

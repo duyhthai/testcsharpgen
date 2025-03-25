@@ -6,7 +6,7 @@ namespace WEB_API.Tests
     public class WeatherForecastTests
     {
         [Fact]
-        public void GetTemperatureF_CelsiusToFarhenheitConversion()
+        public void GetTemperatureF_ReturnsCorrectValue()
         {
             // Arrange
             var forecast = new WeatherForecast
@@ -22,31 +22,31 @@ namespace WEB_API.Tests
         }
 
         [Fact]
-        public void SetDate_UpdatesDateProperty()
+        public void SetTemperatureC_ChangesTemperatureF()
         {
             // Arrange
             var forecast = new WeatherForecast();
-            var newDate = DateTime.Now.AddDays(1);
+            forecast.TemperatureC = 25;
 
             // Act
-            forecast.Date = newDate;
+            forecast.TemperatureC = 30;
 
             // Assert
-            Assert.Equal(newDate, forecast.Date);
+            Assert.Equal(86, forecast.TemperatureF);
         }
 
         [Fact]
-        public void SetSummary_UpdatesSummaryProperty()
+        public void DefaultSummary_IsNotNullOrEmpty()
         {
             // Arrange
             var forecast = new WeatherForecast();
-            var newSummary = "Sunny";
 
             // Act
-            forecast.Summary = newSummary;
+            var summary = forecast.Summary;
 
             // Assert
-            Assert.Equal(newSummary, forecast.Summary);
+            Assert.NotNull(summary);
+            Assert.NotEmpty(summary);
         }
     }
 }

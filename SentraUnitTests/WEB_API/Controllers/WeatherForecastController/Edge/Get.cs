@@ -33,7 +33,7 @@ public class WeatherForecastControllerTests
     }
 
     [Fact]
-    public void Get_ForecastSummariesAreNotEmpty()
+    public void Get_ForecastTemperaturesAreInRange()
     {
         // Arrange
         var controller = new WeatherForecastController();
@@ -42,7 +42,7 @@ public class WeatherForecastControllerTests
         // Act & Assert
         foreach (var forecast in result)
         {
-            Assert.NotEmpty(forecast.Summary);
+            Assert.InRange(forecast.TemperatureC, -20, 55);
         }
     }
 }

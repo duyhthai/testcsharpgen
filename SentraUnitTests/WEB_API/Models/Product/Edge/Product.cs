@@ -62,5 +62,34 @@ namespace WEB_API.Tests
             Assert.Equal(int.MaxValue, product.ViewCount);
             Assert.Equal(DateTime.MaxValue, product.CreatedAt);
         }
+
+        [Fact]
+        public void TestProductConstructorWithEmptyStringForContent()
+        {
+            // Arrange
+            var product = new Product
+            {
+                Id = 1,
+                Sku = "SKU1",
+                Content = "",
+                Price = 10.0f,
+                DiscountPrice = null,
+                IsActive = true,
+                ImageUrl = "http://example.com/image.jpg",
+                ViewCount = 0,
+                CreatedAt = DateTime.Now
+            };
+
+            // Act & Assert
+            Assert.Equal(1, product.Id);
+            Assert.Equal("SKU1", product.Sku);
+            Assert.Equal("", product.Content);
+            Assert.Equal(10.0f, product.Price);
+            Assert.Null(product.DiscountPrice);
+            Assert.True(product.IsActive);
+            Assert.Equal("http://example.com/image.jpg", product.ImageUrl);
+            Assert.Equal(0, product.ViewCount);
+            Assert.NotEqual(default(DateTime), product.CreatedAt);
+        }
     }
 }

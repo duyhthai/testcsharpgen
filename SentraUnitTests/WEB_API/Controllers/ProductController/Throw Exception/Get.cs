@@ -13,37 +13,35 @@ public class ProductControllerTests
     public ProductControllerTests()
     {
         _mockConnection = new Mock<SqlConnection>();
-        _controller = new ProductController();
-        _controller.DatabaseContext = new Mock<IDatabaseContext>().Object; // Assuming IDatabaseContext is used
+        _controller = new ProductController { _connectionString = "ValidConnectionString" };
     }
 
     [Fact]
     public async Task Get_ThrowsException_WhenConnectionStringIsNull()
     {
         // Arrange
-        _controller.DatabaseContext.ConnectionString = null;
+        _controller._connectionString = null;
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => _controller.Get());
     }
 
     [Fact]
-    public async Task Get_ThrowsException_WhenDatabaseQueryFails()
+    public async Task Get_ThrowsException_WhenQueryFails()
     {
         // Arrange
         _mockConnection.Setup(conn => conn.Open()).Verifiable();
-        _mockConnection.Setup(conn => conn.QueryAsync<Product>("", null, null, null, CommandType.Text))
-                        .ThrowsAsync(new SqlException());
+        _mockConnection.Setup(conn => conn.QueryAsync<Product>("", null, null, null, CommandType.Text)).ThrowsAsync(new SqlException());
 
         // Act & Assert
         await Assert.ThrowsAsync<SqlException>(() => _controller.Get());
     }
 
     [Fact]
-    public async Task Get_WithEmptyConnectionString_ThrowsException()
+    public async Task Get_ThrowsException_WhenConnectionIsClosed()
     {
         // Arrange
-        _controller.DatabaseContext.ConnectionString = "";
+        _mockConnection.Setup(conn => conn.Open()).Verifiable();
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => _controller.Get());

@@ -1,99 +1,82 @@
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Data.SqlClient;
+using WEB_API.Models;
+using Dapper;
 using Xunit;
 
 public class ProductControllerTests
 {
-    private readonly Mock<SqlConnection> _mockConnection;
-    private readonly Mock<IDapper> _mockDapper;
+    private readonly Mock<IConfiguration> _configurationMock;
     private readonly ProductController _controller;
 
     public ProductControllerTests()
     {
-        _mockConnection = new Mock<SqlConnection>();
-        _mockDapper = new Mock<IDapper>();
-        _controller = new ProductController();
-        _controller.DatabaseContext = _mockConnection.Object;
-        _controller.Dapper = _mockDapper.Object;
+        _configurationMock = new Mock<IConfiguration>();
+        _configurationMock.SetupGet(c => c["ConnectionString"]).Returns("Data Source=.;Initial Catalog=TestDB;Integrated Security=True;");
+        _controller = new ProductController(_configurationMock.Object);
     }
 
     [Fact]
-    public async Task Post_WithEmptyProduct_SetsDefaultValuesAndReturnsNewProductId()
+    public async Task Post_WithEmptyProduct_SetsDefaultValuesAndInsertsIntoDatabase()
     {
         // Arrange
         var product = new Product { Sku = "", Content = "", Price = 0, IsActive = false, ImageUrl = "" };
-        var parameters = new DynamicParameters();
-        parameters.Add("@sku", "");
-        parameters.Add("@content", "");
-        parameters.Add("@price", 0);
-        parameters.Add("@isActive", false);
-        parameters.Add("@imageUrl", "");
-        parameters.Add("@id", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+        var mockConnection = new Mock<SqlConnection>();
+        mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
+        mockConnection.Setup(conn => conn.Open()).Verifiable();
+        mockConnection.Setup(conn => conn.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>())).ReturnsAsync(1);
 
-        _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-        _mockConnection.Setup(conn => conn.Open());
-        _mockDapper.Setup(dapper => dapper.ExecuteAsync("Create_Product", parameters, null, null, System.Data.CommandType.StoredProcedure)).ReturnsAsync(1);
+        _controller.DatabaseContext = mockConnection.Object;
 
         // Act
         var result = await _controller.Post(product);
 
         // Assert
+        mockConnection.Verify(conn => conn.Open(), Times.Once());
+        mockConnection.Verify(conn => conn.ExecuteAsync(It.Is<string>(s => s.Contains("Create_Product")), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>()), Times.Once());
         Assert.Equal(1, result);
-        _mockConnection.Verify(conn => conn.Open(), Times.Once);
-        _mockDapper.Verify(dapper => dapper.ExecuteAsync("Create_Product", parameters, null, null, System.Data.CommandType.StoredProcedure), Times.Once);
     }
 
     [Fact]
-    public async Task Post_WithMaxPrice_SetsCorrectValueAndReturnsNewProductId()
+    public async Task Post_WithMaxPriceValue_InsertsIntoDatabase()
     {
         // Arrange
-        var maxPrice = decimal.MaxValue;
-        var product = new Product { Sku = "SKU123", Content = "Content", Price = maxPrice, IsActive = true, ImageUrl = "ImageUrl" };
-        var parameters = new DynamicParameters();
-        parameters.Add("@sku", "SKU123");
-        parameters.Add("@content", "Content");
-        parameters.Add("@price", maxPrice);
-        parameters.Add("@isActive", true);
-        parameters.Add("@imageUrl", "ImageUrl");
-        parameters.Add("@id", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+        var product = new Product { Sku = "SKU123", Content = "Content", Price = decimal.MaxValue, IsActive = true, ImageUrl = "http://example.com/image.jpg" };
+        var mockConnection = new Mock<SqlConnection>();
+        mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
+        mockConnection.Setup(conn => conn.Open()).Verifiable();
+        mockConnection.Setup(conn => conn.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>())).ReturnsAsync(1);
 
-        _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-        _mockConnection.Setup(conn => conn.Open());
-        _mockDapper.Setup(dapper => dapper.ExecuteAsync("Create_Product", parameters, null, null, System.Data.CommandType.StoredProcedure)).ReturnsAsync(1);
+        _controller.DatabaseContext = mockConnection.Object;
 
         // Act
         var result = await _controller.Post(product);
 
         // Assert
+        mockConnection.Verify(conn => conn.Open(), Times.Once());
+        mockConnection.Verify(conn => conn.ExecuteAsync(It.Is<string>(s => s.Contains("Create_Product")), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>()), Times.Once());
         Assert.Equal(1, result);
-        _mockConnection.Verify(conn => conn.Open(), Times.Once);
-        _mockDapper.Verify(dapper => dapper.ExecuteAsync("Create_Product", parameters, null, null, System.Data.CommandType.StoredProcedure), Times.Once);
     }
 
     [Fact]
-    public async Task Post_WithMinPrice_SetsCorrectValueAndReturnsNewProductId()
+    public async Task Post_WithMinPriceValue_InsertsIntoDatabase()
     {
         // Arrange
-        var minPrice = decimal.MinValue;
-        var product = new Product { Sku = "SKU123", Content = "Content", Price = minPrice, IsActive = true, ImageUrl = "ImageUrl" };
-        var parameters = new DynamicParameters();
-        parameters.Add("@sku", "SKU123");
-        parameters.Add("@content", "Content");
-        parameters.Add("@price", minPrice);
-        parameters.Add("@isActive", true);
-        parameters.Add("@imageUrl", "ImageUrl");
-        parameters.Add("@id", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
+        var product = new Product { Sku = "SKU123", Content = "Content", Price = decimal.MinValue, IsActive = true, ImageUrl = "http://example.com/image.jpg" };
+        var mockConnection = new Mock<SqlConnection>();
+        mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
+        mockConnection.Setup(conn => conn.Open()).Verifiable();
+        mockConnection.Setup(conn => conn.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>())).ReturnsAsync(1);
 
-        _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-        _mockConnection.Setup(conn => conn.Open());
-        _mockDapper.Setup(dapper => dapper.ExecuteAsync("Create_Product", parameters, null, null, System.Data.CommandType.StoredProcedure)).ReturnsAsync(1);
+        _controller.DatabaseContext = mockConnection.Object;
 
         // Act
         var result = await _controller.Post(product);
 
         // Assert
+        mockConnection.Verify(conn => conn.Open(), Times.Once());
+        mockConnection.Verify(conn => conn.ExecuteAsync(It.Is<string>(s => s.Contains("Create_Product")), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>()), Times.Once());
         Assert.Equal(1, result);
-        _mockConnection.Verify(conn => conn.Open(), Times.Once);
-        _mockDapper.Verify(dapper => dapper.ExecuteAsync("Create_Product", parameters, null, null, System.Data.CommandType.StoredProcedure), Times.Once);
     }
 }

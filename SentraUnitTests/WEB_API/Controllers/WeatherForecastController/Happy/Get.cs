@@ -24,10 +24,13 @@ public class WeatherForecastControllerTests
     {
         // Arrange
         var controller = new WeatherForecastController();
+
+        // Act
         var result = controller.Get() as IActionResult;
         var forecasts = result.Value as IEnumerable<WeatherForecast>;
 
-        // Act & Assert
+        // Assert
+        Assert.NotNull(forecasts);
         for (int i = 0; i < forecasts.Count(); i++)
         {
             Assert.Equal(DateTime.Now.AddDays(i + 1), forecasts.ElementAt(i).Date);
@@ -35,17 +38,20 @@ public class WeatherForecastControllerTests
     }
 
     [Fact]
-    public void Get_ForecastSummariesAreNotEmpty()
+    public void Get_ForecastTemperaturesAreInRange()
     {
         // Arrange
         var controller = new WeatherForecastController();
+
+        // Act
         var result = controller.Get() as IActionResult;
         var forecasts = result.Value as IEnumerable<WeatherForecast>;
 
-        // Act & Assert
+        // Assert
+        Assert.NotNull(forecasts);
         foreach (var forecast in forecasts)
         {
-            Assert.NotEmpty(forecast.Summary);
+            Assert.InRange(forecast.TemperatureC, -20, 55);
         }
     }
 }

@@ -22,19 +22,18 @@ public class ProductTests
         };
 
         // Act
-        var result = product;
+        var result = product.Id == 1 && 
+                     product.Sku == "SKU123" && 
+                     product.Content == "Sample content" && 
+                     product.Price == 19.99f && 
+                     product.DiscountPrice == null && 
+                     product.IsActive == true && 
+                     product.ImageUrl == "http://example.com/image.jpg" && 
+                     product.ViewCount == 0 && 
+                     product.CreatedAt != default(DateTime);
 
         // Assert
-        Assert.IsNotNull(result);
-        Assert.AreEqual(1, result.Id);
-        Assert.AreEqual("SKU123", result.Sku);
-        Assert.AreEqual("Sample content", result.Content);
-        Assert.AreEqual(19.99f, result.Price);
-        Assert.IsNull(result.DiscountPrice);
-        Assert.IsTrue(result.IsActive);
-        Assert.AreEqual("http://example.com/image.jpg", result.ImageUrl);
-        Assert.AreEqual(0, result.ViewCount);
-        Assert.IsNotEmpty(result.CreatedAt);
+        Assert.IsTrue(result);
     }
 
     [Test]
@@ -49,24 +48,55 @@ public class ProductTests
             Price = 29.99f,
             DiscountPrice = 19.99f,
             IsActive = true,
-            ImageUrl = "http://example.com/discount_image.jpg",
-            ViewCount = 5,
+            ImageUrl = "http://example.com/discount-image.jpg",
+            ViewCount = 0,
             CreatedAt = DateTime.Now
         };
 
         // Act
-        var result = product;
+        var result = product.Id == 2 && 
+                     product.Sku == "SKU456" && 
+                     product.Content == "Discounted content" && 
+                     product.Price == 29.99f && 
+                     product.DiscountPrice == 19.99f && 
+                     product.IsActive == true && 
+                     product.ImageUrl == "http://example.com/discount-image.jpg" && 
+                     product.ViewCount == 0 && 
+                     product.CreatedAt != default(DateTime);
 
         // Assert
-        Assert.IsNotNull(result);
-        Assert.AreEqual(2, result.Id);
-        Assert.AreEqual("SKU456", result.Sku);
-        Assert.AreEqual("Discounted content", result.Content);
-        Assert.AreEqual(29.99f, result.Price);
-        Assert.AreEqual(19.99f, result.DiscountPrice.Value);
-        Assert.IsTrue(result.IsActive);
-        Assert.AreEqual("http://example.com/discount_image.jpg", result.ImageUrl);
-        Assert.AreEqual(5, result.ViewCount);
-        Assert.IsNotEmpty(result.CreatedAt);
+        Assert.IsTrue(result);
+    }
+
+    [Test]
+    public void TestProductConstructorWithInactiveProduct()
+    {
+        // Arrange
+        var product = new Product
+        {
+            Id = 3,
+            Sku = "SKU789",
+            Content = "Inactive content",
+            Price = 14.99f,
+            DiscountPrice = null,
+            IsActive = false,
+            ImageUrl = "http://example.com/inactive-image.jpg",
+            ViewCount = 0,
+            CreatedAt = DateTime.Now
+        };
+
+        // Act
+        var result = product.Id == 3 && 
+                     product.Sku == "SKU789" && 
+                     product.Content == "Inactive content" && 
+                     product.Price == 14.99f && 
+                     product.DiscountPrice == null && 
+                     product.IsActive == false && 
+                     product.ImageUrl == "http://example.com/inactive-image.jpg" && 
+                     product.ViewCount == 0 && 
+                     product.CreatedAt != default(DateTime);
+
+        // Assert
+        Assert.IsTrue(result);
     }
 }

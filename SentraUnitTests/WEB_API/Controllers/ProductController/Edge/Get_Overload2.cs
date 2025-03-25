@@ -6,58 +6,38 @@ using Xunit;
 
 public class ProductControllerTests
 {
-    private readonly string _connectionString = "Server=.;Database=TestDB;Trusted_Connection=True;";
-
     [Fact]
-    public async Task Get_ThrowsExceptionOnInvalidId()
+    public async Task Get_ThrowsExceptionForEmptyConnectionString()
     {
         // Arrange
-        var controller = new ProductController();
-        var invalidId = int.MinValue;
+        var controller = new ProductController(null);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(invalidId));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => controller.Get(1));
     }
 
     [Fact]
-    public async Task Get_ThrowsExceptionOnSqlError()
+    public async Task Get_ThrowsExceptionForInvalidIdType()
     {
         // Arrange
-        var controller = new ProductController();
-        var nonExistentId = 999999;
+        var controller = new ProductController("valid_connection_string");
 
-        // Mocking SQL error
-        using (var mockConnection = new Mock<SqlConnection>(_connectionString))
-        {
-            mockConnection.Setup(m => m.Open()).Throws(new SqlException());
-            controller.ControllerContext.HttpContext.RequestServices.GetService(typeof(SqlConnection)).Returns(mockConnection.Object);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<SqlException>(() => controller.Get(nonExistentId));
-        }
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => controller.Get(-1));
     }
 
     [Fact]
-    public async Task Get_ReturnsNullForNonExistentId()
+    public async Task Get_ThrowsExceptionForClosedConnection()
     {
         // Arrange
-        var controller = new ProductController();
-        var nonExistentId = 999999;
-
-        // Mocking empty result
-        using (var mockConnection = new Mock<SqlConnection>(_connectionString))
+        var connectionString = "Server=.;Database=TestDB;Trusted_Connection=True;";
+        var controller = new ProductController(connectionString);
+        using (var conn = new SqlConnection(connectionString))
         {
-            mockConnection.Setup(m => m.Open());
-            controller.ControllerContext.HttpContext.RequestServices.GetService(typeof(SqlConnection)).Returns(mockConnection.Object);
-
-            mockConnection.Setup(m => m.QueryAsync<Product>("Get_Product_ById", It.IsAny<DynamicParameters>(), null, null, System.Data.CommandType.StoredProcedure))
-                           .ReturnsAsync((IEnumerable<Product>)null);
-
-            // Act
-            var result = await controller.Get(nonExistentId);
-
-            // Assert
-            Assert.Null(result);
+            conn.Close();
         }
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(1));
     }
 }

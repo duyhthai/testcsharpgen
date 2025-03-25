@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Data.SqlClient;
+using WEB_API.Models;
+using Dapper;
 using Moq;
-using System.Collections.Generic;
-using System.Data;
-using System.Threading.Tasks;
 using Xunit;
 
 public class ProductControllerTests
@@ -13,17 +13,16 @@ public class ProductControllerTests
     public ProductControllerTests()
     {
         _mockConnection = new Mock<SqlConnection>();
-        _controller = new ProductController();
-        _controller.DatabaseContext = new Mock<IDatabaseContext>().Object;
+        _controller = new ProductController { _connectionString = "TestConnectionString" };
     }
 
     [Fact]
-    public async Task Get_ReturnsEmptyList_WhenNoProductsFound()
+    public async Task Get_ReturnsEmptyList_WhenDatabaseIsEmpty()
     {
         // Arrange
-        _mockConnection.Setup(conn => conn.State).Returns(ConnectionState.Closed);
+        _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
         _mockConnection.Setup(conn => conn.Open());
-        _mockConnection.Setup(conn => conn.QueryAsync<Product>("", null, null, null, CommandType.Text)).Returns(Task.FromResult<IEnumerable<Product>>(new List<Product>()));
+        _mockConnection.Setup(conn => conn.QueryAsync<Product>("", null, null, null, System.Data.CommandType.Text)).ReturnsAsync(new List<Product>());
 
         // Act
         var result = await _controller.Get();
@@ -36,19 +35,19 @@ public class ProductControllerTests
     public async Task Get_ThrowsException_WhenConnectionStringIsNull()
     {
         // Arrange
-        _controller.DatabaseContext.ConnectionString = null;
+        _controller._connectionString = null;
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => _controller.Get());
     }
 
     [Fact]
-    public async Task Get_ThrowsException_WhenDatabaseQueryFails()
+    public async Task Get_ThrowsException_WhenQueryFails()
     {
         // Arrange
-        _mockConnection.Setup(conn => conn.State).Returns(ConnectionState.Closed);
+        _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
         _mockConnection.Setup(conn => conn.Open());
-        _mockConnection.Setup(conn => conn.QueryAsync<Product>("", null, null, null, CommandType.Text)).ThrowsAsync(new SqlException());
+        _mockConnection.Setup(conn => conn.QueryAsync<Product>("", null, null, null, System.Data.CommandType.Text)).ThrowsAsync(new SqlException());
 
         // Act & Assert
         await Assert.ThrowsAsync<SqlException>(() => _controller.Get());
