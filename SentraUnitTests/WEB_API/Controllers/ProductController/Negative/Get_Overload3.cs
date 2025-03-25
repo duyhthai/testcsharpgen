@@ -6,40 +6,41 @@ using Xunit;
 
 public class ProductControllerTests
 {
+    private readonly string _connectionString = "YourConnectionStringHere";
+
     [Fact]
-    public async Task Get_ThrowsException_WithEmptyConnectionString()
+    public async Task Get_ThrowsArgumentException_WhenIdIsNegative()
     {
         // Arrange
         var controller = new ProductController();
-        _connectionString = string.Empty;
+        int negativeId = -1;
+        string validName = "TestProduct";
 
         // Act & Assert
-        await Assert.ThrowsAsync<SqlException>(() => controller.Get(1, "Test"));
+        await Assert.ThrowsAsync<ArgumentException>(() => controller.Get(negativeId, validName));
     }
 
     [Fact]
-    public async Task Get_ThrowsException_WithInvalidId()
+    public async Task Get_ThrowsArgumentException_WhenNameIsNull()
     {
         // Arrange
         var controller = new ProductController();
-        var parameters = new DynamicParameters();
-        parameters.Add("@id", -1);
-        parameters.Add("@name", "Test");
+        int validId = 1;
+        string nullName = null;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(-1, "Test"));
+        await Assert.ThrowsAsync<ArgumentException>(() => controller.Get(validId, nullName));
     }
 
     [Fact]
-    public async Task Get_ThrowsException_WithInvalidName()
+    public async Task Get_ThrowsArgumentException_WhenNameIsEmpty()
     {
         // Arrange
         var controller = new ProductController();
-        var parameters = new DynamicParameters();
-        parameters.Add("@id", 1);
-        parameters.Add("@name", null);
+        int validId = 1;
+        string emptyName = "";
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(1, null));
+        await Assert.ThrowsAsync<ArgumentException>(() => controller.Get(validId, emptyName));
     }
 }

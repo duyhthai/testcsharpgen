@@ -2,58 +2,50 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 using WEB_API.Models;
 using Dapper;
+using Moq;
 using Xunit;
 
 public class ProductControllerTests
 {
-    private readonly string _connectionString = "YourConnectionStringHere";
+    [Fact]
+    public async Task Get_ThrowsExceptionOnSqlError()
+    {
+        // Arrange
+        var mockConnection = new Mock<SqlConnection>();
+        mockConnection.Setup(conn => conn.Open()).Throws(new SqlException());
+        var controller = new ProductController { _connectionString = "TestConnectionString" };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<SqlException>(() => controller.Get(1));
+    }
 
     [Fact]
     public async Task Get_ThrowsExceptionOnInvalidId()
     {
         // Arrange
-        var controller = new ProductController();
-        int invalidId = -1;
-
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(invalidId));
-    }
-
-    [Fact]
-    public async Task Get_ThrowsExceptionOnSqlError()
-    {
-        // Arrange
-        var controller = new ProductController();
-        int id = 1; // Assuming this ID exists in your database
         var mockConnection = new Mock<SqlConnection>();
-        mockConnection.Setup(conn => conn.Open()).Throws(new SqlException());
-        controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext(),
-            RouteData = new Microsoft.AspNetCore.Routing.RouteData()
-        };
-        controller.DatabaseContext = mockConnection.Object;
+        mockConnection.Setup(conn => conn.Open());
+        var controller = new ProductController { _connectionString = "TestConnectionString" };
+        var parameters = new DynamicParameters();
+        parameters.Add("@id", -1);
+        mockConnection.Setup(conn => conn.QueryAsync<Product>("Get_Product_ById", parameters, null, null, System.Data.CommandType.StoredProcedure)).Returns(Task.FromResult<IEnumerable<Product>>(null));
 
         // Act & Assert
-        await Assert.ThrowsAsync<SqlException>(() => controller.Get(id));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(-1));
     }
 
     [Fact]
     public async Task Get_ThrowsExceptionOnEmptyResult()
     {
         // Arrange
-        var controller = new ProductController();
-        int nonExistentId = 99999; // Assuming this ID does not exist in your database
         var mockConnection = new Mock<SqlConnection>();
         mockConnection.Setup(conn => conn.Open());
-        controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext(),
-            RouteData = new Microsoft.AspNetCore.Routing.RouteData()
-        };
-        controller.DatabaseContext = mockConnection.Object;
+        var controller = new ProductController { _connectionString = "TestConnectionString" };
+        var parameters = new DynamicParameters();
+        parameters.Add("@id", 1);
+        mockConnection.Setup(conn => conn.QueryAsync<Product>("Get_Product_ById", parameters, null, null, System.Data.CommandType.StoredProcedure)).Returns(Task.FromResult<IEnumerable<Product>>(new List<Product>()));
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(nonExistentId));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(1));
     }
 }

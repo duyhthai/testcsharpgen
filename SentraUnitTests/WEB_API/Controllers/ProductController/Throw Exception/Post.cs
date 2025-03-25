@@ -16,6 +16,10 @@ namespace WEB_API.Tests.Controllers
         {
             _mockConnection = new Mock<SqlConnection>();
             _controller = new ProductController();
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
         }
 
         [Fact]
@@ -24,31 +28,31 @@ namespace WEB_API.Tests.Controllers
             // Arrange
             var product = new Product { Sku = "SKU123", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
             _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-            _controller.ControllerContext = new ControllerContext(new DefaultHttpContext(), new RouteData(), _controller);
+            _controller.DatabaseContext = new DatabaseContext(new DbContextOptionsBuilder<DatabaseContext>().UseSqlServer("").Options);
 
             // Act & Assert
             await Assert.ThrowsAsync<SqlException>(() => _controller.Post(product));
         }
 
         [Fact]
-        public async Task Post_WithNullProduct_ThrowsArgumentNullException()
+        public async Task Post_WithInvalidConnectionString_ThrowsArgumentException()
         {
             // Arrange
-            _controller.ControllerContext = new ControllerContext(new DefaultHttpContext(), new RouteData(), _controller);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _controller.Post(null));
-        }
-
-        [Fact]
-        public async Task Post_WithInvalidSku_ThrowsArgumentException()
-        {
-            // Arrange
-            var product = new Product { Sku = "", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
-            _controller.ControllerContext = new ControllerContext(new DefaultHttpContext(), new RouteData(), _controller);
+            var product = new Product { Sku = "SKU123", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
+            _controller.DatabaseContext = new DatabaseContext(new DbContextOptionsBuilder<DatabaseContext>().UseSqlServer("").Options);
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => _controller.Post(product));
+        }
+
+        [Fact]
+        public async Task Post_WithNullProduct_ThrowsArgumentNullException()
+        {
+            // Arrange
+            Product product = null;
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _controller.Post(product));
         }
     }
 }

@@ -2,43 +2,25 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-public class WebApplicationBuilderTests
+public class NegativeTests
 {
     [Fact]
-    public void Test_WebApplication_Builder_AddsInvalidServiceThrowsException()
+    public void ConfigureServices_ThrowsException_WhenNullArgumentProvided()
     {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
         // Arrange
-        Action action = () => builder.Services.AddSingleton(null);
+        var builder = null as WebApplicationBuilder;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(action);
+        Assert.Throws<ArgumentNullException>(() => builder?.Services.AddControllers());
     }
 
     [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithNullActionThrowsException()
+    public void MapControllers_ThrowsException_WhenNullArgumentProvided()
     {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-        var app = builder.Build();
-
         // Arrange
-        Action action = () => app.MapControllers(null);
+        var app = null as IApplicationBuilder;
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(action);
-    }
-
-    [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithEmptyPathThrowsException()
-    {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-        var app = builder.Build();
-
-        // Arrange
-        Action action = () => app.MapGet("", () => "Hello World");
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(action);
+        Assert.Throws<ArgumentNullException>(() => app?.MapControllers());
     }
 }
