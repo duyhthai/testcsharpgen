@@ -21,7 +21,7 @@ public class ProductControllerTests
     public async Task Delete_ShouldThrowArgumentNullException_WhenConnectionStringIsNull()
     {
         // Arrange
-        var controller = new ProductController(null);
+        var controller = new ProductController { _connectionString = null };
         int validId = 1;
 
         // Act & Assert
@@ -29,13 +29,10 @@ public class ProductControllerTests
     }
 
     [Fact]
-    public async Task Delete_ShouldThrowInvalidOperationException_WhenDatabaseOperationFails()
+    public async Task Delete_ShouldThrowInvalidOperationException_WhenConnectionCannotBeOpened()
     {
         // Arrange
-        var mockConnection = new Mock<SqlConnection>();
-        mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-        mockConnection.Setup(conn => conn.Open()).Throws(new InvalidOperationException());
-        var controller = new ProductController(mockConnection.Object);
+        var controller = new ProductController { _connectionString = "Invalid Connection String" };
         int validId = 1;
 
         // Act & Assert

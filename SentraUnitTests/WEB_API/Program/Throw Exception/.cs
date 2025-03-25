@@ -3,51 +3,30 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Xunit;
 
-public class WebApplicationTests
+public class StartupTests
 {
     [Fact]
-    public void Test_WebApplication_Builder_ConfiguresServices()
+    public void Should_ThrowException_When_AddingNullService()
     {
         var builder = WebApplication.CreateBuilder(new string[] { });
 
         // Arrange
-        var services = new ServiceCollection();
-        builder.Services.AddSingleton(services);
+        Action action = () => builder.Services.AddControllers(null!);
 
-        // Act
-        builder.ConfigureServices(services => services.AddControllers());
-
-        // Assert
-        Assert.Contains(typeof(MvcServiceCollectionExtensions), builder.Services);
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(action);
     }
 
     [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithNullActionThrowsException()
+    public void Should_ThrowException_When_MappingNullController()
     {
         var builder = WebApplication.CreateBuilder(new string[] { });
-
-        // Arrange
         var app = builder.Build();
 
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
-        {
-            app.MapGet("/test", null);
-        });
-    }
-
-    [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithEmptyPathThrowsException()
-    {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
         // Arrange
-        var app = builder.Build();
+        Action action = () => app.MapControllers(null!);
 
         // Act & Assert
-        Assert.Throws<ArgumentException>(() =>
-        {
-            app.MapGet("", () => "Hello World");
-        });
+        Assert.Throws<ArgumentNullException>(action);
     }
 }

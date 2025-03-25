@@ -1,55 +1,51 @@
 using Microsoft.AspNetCore.Mvc;
-using Moq;
 using System.Data.SqlClient;
-using WEB_API.Controllers;
 using WEB_API.Models;
+using Dapper;
+using Moq;
 using Xunit;
 
-namespace WEB_API.Tests.Controllers
+public class ProductControllerTests
 {
-    public class ProductControllerTests
+    private readonly Mock<SqlConnection> _mockConnection;
+    private readonly ProductController _controller;
+
+    public ProductControllerTests()
     {
-        private readonly Mock<SqlConnection> _mockConnection;
-        private readonly ProductController _controller;
+        _mockConnection = new Mock<SqlConnection>();
+        _controller = new ProductController { _connectionString = "TestConnectionString" };
+    }
 
-        public ProductControllerTests()
-        {
-            _mockConnection = new Mock<SqlConnection>();
-            _controller = new ProductController();
-        }
+    [Fact]
+    public async Task Put_WithInvalidId_ThrowsArgumentException()
+    {
+        // Arrange
+        int invalidId = -1;
+        var product = new Product { Sku = "SKU123", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
 
-        [Fact]
-        public async Task Put_WithException_RethrowsException()
-        {
-            // Arrange
-            int id = 1;
-            var product = new Product { Sku = "SKU123", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
-            _mockConnection.Setup(conn => conn.Open()).Throws(new SqlException());
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => _controller.Put(invalidId, product));
+    }
 
-            // Act & Assert
-            await Assert.ThrowsAsync<SqlException>(() => _controller.Put(id, product));
-        }
+    [Fact]
+    public async Task Put_WithNullProduct_ThrowsArgumentNullException()
+    {
+        // Arrange
+        int validId = 1;
+        Product nullProduct = null;
 
-        [Fact]
-        public async Task Put_WithInvalidId_ThrowsArgumentException()
-        {
-            // Arrange
-            int id = -1;
-            var product = new Product { Sku = "SKU123", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _controller.Put(validId, nullProduct));
+    }
 
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => _controller.Put(id, product));
-        }
+    [Fact]
+    public async Task Put_WithEmptySku_ThrowsArgumentException()
+    {
+        // Arrange
+        int validId = 1;
+        var product = new Product { Sku = "", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
 
-        [Fact]
-        public async Task Put_WithNullProduct_ThrowsArgumentNullException()
-        {
-            // Arrange
-            int id = 1;
-            Product product = null;
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _controller.Put(id, product));
-        }
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(() => _controller.Put(validId, product));
     }
 }

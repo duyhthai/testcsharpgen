@@ -4,74 +4,57 @@ using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
 using Xunit;
 
-public class WebApplicationTests
+public class WebApplicationBuilderTests
 {
     [Fact]
-    public async Task Test_WebApplication_Builder_ConfiguresServices()
+    public async Task Should_AddControllers_ToServices()
     {
         // Arrange
         var args = new string[] { };
         var builder = WebApplication.CreateBuilder(args);
-
+        
         // Act
         builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-
+        
         // Assert
-        Assert.NotNull(builder.Services);
-        Assert.Contains(typeof(MvcServiceCollectionExtensions), builder.Services.GetRequiredService<IServiceCollection>().Where(s => s.ServiceType == typeof(IMvcCoreBuilder)));
-        Assert.Contains(typeof(EndpointsApiExplorerServiceCollectionExtensions), builder.Services.GetRequiredService<IServiceCollection>().Where(s => s.ServiceType == typeof(IEndpointsApiExplorerBuilder)));
-        Assert.Contains(typeof(SwaggerGenServiceCollectionExtensions), builder.Services.GetRequiredService<IServiceCollection>().Where(s => s.ServiceType == typeof(ISwaggerGenOptions));
+        var serviceDescriptor = builder.Services.FirstOrDefault(d => d.ServiceType == typeof(Microsoft.AspNetCore.Mvc.Controllers.ControllerActionInvokerProvider));
+        Assert.NotNull(serviceDescriptor);
     }
 
     [Fact]
-    public async Task Test_WebApplication_BuildsAndRuns()
+    public async Task Should_EnableSwagger_When_EnvironmentIsDevelopment()
     {
         // Arrange
         var args = new string[] { };
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        var app = builder.Build();
-
+        builder.WebHost.UseUrls("http://localhost:5000");
+        
         // Act
+        var app = builder.Build();
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-        app.UseHttpsRedirection();
-        app.UseAuthorization();
-        app.MapControllers();
-
+        
         // Assert
-        Assert.NotNull(app);
-        Assert.True(app.Environment.IsDevelopment());
+        var middleware = app.RequestPipeline.Middlewares.FirstOrDefault(m => m.GetType().Name.Contains("UseSwagger"));
+        Assert.NotNull(middleware);
     }
 
     [Fact]
-    public async Task Test_WebApplication_RunsInProductionMode()
+    public async Task Should_MapControllers()
     {
         // Arrange
-        var args = new string[] { "--environment", "Production" };
+        var args = new string[] { };
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
-        var app = builder.Build();
-
+        
         // Act
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseHttpsRedirection();
-            app.UseAuthorization();
-            app.MapControllers();
-        }
-
+        var app = builder.Build();
+        app.MapControllers();
+        
         // Assert
-        Assert.NotNull(app);
-        Assert.False(app.Environment.IsDevelopment());
+        var endpoint = app.EndpointRouting.RouteTable.Endpoints.FirstOrDefault(e => e.DisplayName.Contains("MapControllers"));
+        Assert.NotNull(endpoint);
     }
 }

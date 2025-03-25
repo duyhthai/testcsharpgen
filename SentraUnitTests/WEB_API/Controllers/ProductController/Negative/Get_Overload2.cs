@@ -7,39 +7,39 @@ using Xunit;
 public class ProductControllerTests
 {
     [Fact]
-    public async Task Get_ThrowsExceptionOnInvalidId()
+    public async Task Get_ThrowsExceptionForEmptyConnectionString()
     {
         // Arrange
-        var controller = new ProductController();
-        var invalidId = -1; // Invalid ID
+        var controller = new ProductController { _connectionString = "" };
+        int id = 1;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(invalidId));
+        await Assert.ThrowsAsync<SqlException>(() => controller.Get(id));
     }
 
     [Fact]
-    public async Task Get_ThrowsExceptionOnSqlError()
+    public async Task Get_ThrowsExceptionForInvalidIdType()
     {
         // Arrange
-        var controller = new ProductController();
-        var mockConnectionString = "Server=nonexistentserver;Database=nonexistentdb;User Id=nonexistentuser;Password=nonexistentpassword;";
-        var controllerField = typeof(ProductController).GetField("_connectionString", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        controllerField.SetValue(controller, mockConnectionString);
+        var controller = new ProductController { _connectionString = "Server=.;Database=TestDB;Trusted_Connection=True;" };
+        string invalidId = "abc";
 
         // Act & Assert
-        await Assert.ThrowsAsync<SqlException>(() => controller.Get(1));
+        await Assert.ThrowsAsync<ArgumentException>(() => controller.Get(invalidId));
     }
 
     [Fact]
-    public async Task Get_ThrowsExceptionOnEmptyResult()
+    public async Task Get_ThrowsExceptionForClosedConnection()
     {
         // Arrange
-        var controller = new ProductController();
-        var emptyResultConnectionString = "Server=localhost;Database=emptyresultdb;User Id=sa;Password=yourStrong(!)Passw0rd;";
-        var controllerField = typeof(ProductController).GetField("_connectionString", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        controllerField.SetValue(controller, emptyResultConnectionString);
+        var controller = new ProductController { _connectionString = "Server=.;Database=TestDB;Trusted_Connection=True;" };
+        int id = 1;
+        using (var conn = new SqlConnection(controller._connectionString))
+        {
+            conn.Close();
+        }
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(1));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(id));
     }
 }

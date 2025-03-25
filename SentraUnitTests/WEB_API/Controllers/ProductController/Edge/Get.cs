@@ -1,68 +1,58 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Threading.Tasks;
 using WEB_API.Models;
 using Dapper;
 using Xunit;
 
-[Collection("ProductControllerTests")]
-public class ProductControllerEdgeTests
+public class ProductControllerTests
 {
     private readonly string _connectionString = "Server=.;Database=TestDB;Trusted_Connection=True;";
 
     [Fact]
-    public async Task Get_WithEmptyConnectionString_ThrowsException()
+    public async Task Get_ReturnsEmptyList_WhenDatabaseIsEmpty()
     {
         // Arrange
-        var controller = new ProductController();
-        controller.ControllerContext = new ControllerContext
+        using (var mockConnection = new Mock<SqlConnection>(_connectionString))
         {
-            HttpContext = new DefaultHttpContext()
-        };
+            mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
+            mockConnection.Setup(conn => conn.Open());
+            mockConnection.Setup(conn => conn.QueryAsync<Product>("SELECT * FROM Products")).ReturnsAsync(new List<Product>());
+
+            var controller = new ProductController(mockConnection.Object);
+
+            // Act
+            var result = await controller.Get();
+
+            // Assert
+            Assert.Empty(result);
+        }
+    }
+
+    [Fact]
+    public async Task Get_ThrowsException_WhenConnectionStringIsNull()
+    {
+        // Arrange
+        var controller = new ProductController(null);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get());
+        await Assert.ThrowsAsync<ArgumentNullException>(() => controller.Get());
     }
 
     [Fact]
-    public async Task Get_WithClosedConnection_OpensConnection()
+    public async Task Get_ThrowsException_WhenQueryFails()
     {
         // Arrange
-        var mockConnection = new Mock<SqlConnection>();
-        mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-        mockConnection.Setup(conn => conn.Open()).Verifiable();
-
-        var controller = new ProductController { _connectionString = "" };
-        controller.ControllerContext = new ControllerContext
+        using (var mockConnection = new Mock<SqlConnection>(_connectionString))
         {
-            HttpContext = new DefaultHttpContext()
-        };
+            mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
+            mockConnection.Setup(conn => conn.Open());
+            mockConnection.Setup(conn => conn.QueryAsync<Product>("SELECT * FROM Products")).ThrowsAsync(new SqlException());
 
-        // Act
-        await controller.Get();
+            var controller = new ProductController(mockConnection.Object);
 
-        // Assert
-        mockConnection.Verify(conn => conn.Open(), Times.Once);
-    }
-
-    [Fact]
-    public async Task Get_WithOpenConnection_DoesNotOpenConnection()
-    {
-        // Arrange
-        var mockConnection = new Mock<SqlConnection>();
-        mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Open);
-
-        var controller = new ProductController { _connectionString = "" };
-        controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = new DefaultHttpContext()
-        };
-
-        // Act
-        await controller.Get();
-
-        // Assert
-        mockConnection.Verify(conn => conn.Open(), Times.Never);
+            // Act & Assert
+            await Assert.ThrowsAsync<SqlException>(() => controller.Get());
+        }
     }
 }

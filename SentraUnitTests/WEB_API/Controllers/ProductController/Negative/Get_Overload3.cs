@@ -10,36 +10,41 @@ public class ProductControllerTests
     public async Task Get_ThrowsException_WithEmptyConnectionString()
     {
         // Arrange
-        var controller = new ProductController();
-        _connectionString = string.Empty;
+        var controller = new ProductController(null);
 
         // Act & Assert
-        await Assert.ThrowsAsync<SqlException>(() => controller.Get(1, "Test"));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => controller.Get(1, "test"));
+    }
+
+    [Fact]
+    public async Task Get_ThrowsException_WithNonExistentStoredProcedure()
+    {
+        // Arrange
+        var connectionString = "Server=.;Database=TestDB;Trusted_Connection=True;";
+        var controller = new ProductController(connectionString);
+
+        using (var mockConnection = new MockSqlConnection())
+        {
+            controller.ControllerContext.HttpContext.RequestServices.GetService(typeof(SqlConnection)).Returns(mockConnection.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<SqlException>(() => controller.Get(1, "test"));
+        }
     }
 
     [Fact]
     public async Task Get_ThrowsException_WithInvalidId()
     {
         // Arrange
-        var controller = new ProductController();
-        var parameters = new DynamicParameters();
-        parameters.Add("@id", -1);
-        parameters.Add("@name", "Test");
+        var connectionString = "Server=.;Database=TestDB;Trusted_Connection=True;";
+        var controller = new ProductController(connectionString);
 
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(-1, "Test"));
-    }
+        using (var mockConnection = new MockSqlConnection())
+        {
+            controller.ControllerContext.HttpContext.RequestServices.GetService(typeof(SqlConnection)).Returns(mockConnection.Object);
 
-    [Fact]
-    public async Task Get_ThrowsException_WithInvalidName()
-    {
-        // Arrange
-        var controller = new ProductController();
-        var parameters = new DynamicParameters();
-        parameters.Add("@id", 1);
-        parameters.Add("@name", null);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(1, null));
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(-1, "test"));
+        }
     }
 }

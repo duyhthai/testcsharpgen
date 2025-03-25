@@ -1,37 +1,36 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Data.SqlClient;
+using WEB_API.Models;
+using Dapper;
 using Moq;
 using Xunit;
 
 public class ProductControllerTests
 {
     private readonly Mock<SqlConnection> _mockConnection;
-    private readonly Mock<IDapper> _mockDapper;
     private readonly ProductController _controller;
 
     public ProductControllerTests()
     {
         _mockConnection = new Mock<SqlConnection>();
-        _mockDapper = new Mock<IDapper>();
-        _controller = new ProductController();
-        _controller.DatabaseContext = _mockConnection.Object;
-        _controller.Dapper = _mockDapper.Object;
+        _controller = new ProductController { _connectionString = "TestConnectionString" };
     }
 
     [Fact]
     public async Task Post_WithNullProduct_ThrowsArgumentNullException()
     {
         // Arrange
-        var product = null;
+        var request = null as Product;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _controller.Post(product));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _controller.Post(request));
     }
 
     [Fact]
     public async Task Post_WithInvalidSku_ThrowsArgumentException()
     {
         // Arrange
-        var product = new Product { Sku = "invalid_sku" };
+        var product = new Product { Sku = null };
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => _controller.Post(product));
@@ -41,7 +40,7 @@ public class ProductControllerTests
     public async Task Post_WithNegativePrice_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var product = new Product { Price = -10.0m };
+        var product = new Product { Price = -10m };
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => _controller.Post(product));

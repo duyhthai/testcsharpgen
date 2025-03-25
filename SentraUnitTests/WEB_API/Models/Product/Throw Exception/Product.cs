@@ -15,10 +15,7 @@ namespace WEB_API.Tests
                 Sku = null,
                 Content = "Sample content",
                 Price = 10.0f,
-                IsActive = true,
-                ImageUrl = "http://example.com/image.jpg",
-                ViewCount = 0,
-                CreatedAt = DateTime.Now
+                IsActive = true
             });
         }
 
@@ -31,10 +28,7 @@ namespace WEB_API.Tests
                 Sku = "SKU123",
                 Content = "",
                 Price = 10.0f,
-                IsActive = true,
-                ImageUrl = "http://example.com/image.jpg",
-                ViewCount = 0,
-                CreatedAt = DateTime.Now
+                IsActive = true
             });
         }
 
@@ -47,10 +41,7 @@ namespace WEB_API.Tests
                 Sku = "SKU123",
                 Content = "Sample content",
                 Price = -10.0f,
-                IsActive = true,
-                ImageUrl = "http://example.com/image.jpg",
-                ViewCount = 0,
-                CreatedAt = DateTime.Now
+                IsActive = true
             });
         }
     }

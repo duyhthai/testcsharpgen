@@ -13,9 +13,33 @@ public class ProductControllerTests
         // Arrange
         var controller = new ProductController();
         _connectionString = string.Empty;
+        var parameters = new DynamicParameters();
+        parameters.Add("@id", 1);
+        parameters.Add("@name", "Test");
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(1, "test"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(1, "Test"));
+    }
+
+    [Fact]
+    public async void Get_ThrowsException_WithNonExistentStoredProcedure()
+    {
+        // Arrange
+        var controller = new ProductController();
+        _connectionString = "Server=.;Database=TestDB;Trusted_Connection=True;";
+        var parameters = new DynamicParameters();
+        parameters.Add("@id", 1);
+        parameters.Add("@name", "NonExistentProcedure");
+
+        // Mocking the connection to throw an exception when executing the stored procedure
+        var mockConnection = new Mock<SqlConnection>();
+        mockConnection.Setup(conn => conn.QueryAsync<Product>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<CommandType>()))
+                       .Throws(new SqlException("No such object"));
+
+        controller.DatabaseContext = mockConnection.Object;
+
+        // Act & Assert
+        await Assert.ThrowsAsync<SqlException>(() => controller.Get(1, "NonExistentProcedure"));
     }
 
     [Fact]
@@ -23,30 +47,19 @@ public class ProductControllerTests
     {
         // Arrange
         var controller = new ProductController();
-        _connectionString = "valid_connection_string";
+        _connectionString = "Server=.;Database=TestDB;Trusted_Connection=True;";
+        var parameters = new DynamicParameters();
+        parameters.Add("@id", -1);
+        parameters.Add("@name", "Test");
 
-        // Mocking the database connection to throw an exception when Open() is called
+        // Mocking the connection to throw an exception when executing the stored procedure
         var mockConnection = new Mock<SqlConnection>();
-        mockConnection.Setup(conn => conn.Open()).Throws(new SqlException());
+        mockConnection.Setup(conn => conn.QueryAsync<Product>(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<CommandType>()))
+                       .Throws(new InvalidOperationException("Invalid ID"));
+
         controller.DatabaseContext = mockConnection.Object;
 
         // Act & Assert
-        await Assert.ThrowsAsync<SqlException>(() => controller.Get(-1, "test"));
-    }
-
-    [Fact]
-    public async void Get_ThrowsException_WithInvalidName()
-    {
-        // Arrange
-        var controller = new ProductController();
-        _connectionString = "valid_connection_string";
-
-        // Mocking the database connection to throw an exception when Open() is called
-        var mockConnection = new Mock<SqlConnection>();
-        mockConnection.Setup(conn => conn.Open()).Throws(new SqlException());
-        controller.DatabaseContext = mockConnection.Object;
-
-        // Act & Assert
-        await Assert.ThrowsAsync<SqlException>(() => controller.Get(1, null));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => controller.Get(-1, "Test"));
     }
 }

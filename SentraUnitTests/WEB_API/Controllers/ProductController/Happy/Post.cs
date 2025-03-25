@@ -16,9 +16,7 @@ namespace WEB_API.Tests.Controllers
         {
             _mockConnection = new Mock<SqlConnection>();
             _mockDapper = new Mock<IDapper>();
-            _controller = new ProductController();
-            _controller.DatabaseContext = _mockConnection.Object;
-            _controller.Dapper = _mockDapper.Object;
+            _controller = new ProductController(_mockConnection.Object, _mockDapper.Object);
         }
 
         [Fact]
@@ -26,28 +24,24 @@ namespace WEB_API.Tests.Controllers
         {
             // Arrange
             var product = new Product { Sku = "SKU123", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
-            var expectedResult = 1;
-
             _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
-            _mockConnection.Setup(conn => conn.Open()).Verifiable();
+            _mockConnection.Setup(conn => conn.Open());
             _mockDapper.Setup(dapper => dapper.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>())).ReturnsAsync(1);
 
             // Act
             var result = await _controller.Post(product);
 
             // Assert
-            Assert.Equal(expectedResult, result);
-            _mockConnection.Verify(conn => conn.Open(), Times.Once());
-            _mockDapper.Verify(dapper => dapper.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>()), Times.Once());
+            Assert.Equal(1, result);
+            _mockConnection.Verify(conn => conn.Open(), Times.Once);
+            _mockDapper.Verify(dapper => dapper.ExecuteAsync(It.Is<string>(s => s == "Create_Product"), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.Is<System.Data.CommandType>(c => c == System.Data.CommandType.StoredProcedure)), Times.Once);
         }
 
         [Fact]
-        public async Task Post_WithOpenConnection_ReturnsNewProductId()
+        public async Task Post_WithOpenConnection_DoesNotReopenConnection()
         {
             // Arrange
             var product = new Product { Sku = "SKU123", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
-            var expectedResult = 1;
-
             _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Open);
             _mockDapper.Setup(dapper => dapper.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>())).ReturnsAsync(1);
 
@@ -55,17 +49,16 @@ namespace WEB_API.Tests.Controllers
             var result = await _controller.Post(product);
 
             // Assert
-            Assert.Equal(expectedResult, result);
-            _mockConnection.Verify(conn => conn.Open(), Times.Never());
-            _mockDapper.Verify(dapper => dapper.ExecuteAsync(It.IsAny<string>(), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.IsAny<System.Data.CommandType>()), Times.Once());
+            Assert.Equal(1, result);
+            _mockConnection.Verify(conn => conn.Open(), Times.Never);
+            _mockDapper.Verify(dapper => dapper.ExecuteAsync(It.Is<string>(s => s == "Create_Product"), It.IsAny<object>(), It.IsAny<SqlTransaction>(), It.IsAny<int?>(), It.Is<System.Data.CommandType>(c => c == System.Data.CommandType.StoredProcedure)), Times.Once);
         }
 
         [Fact]
-        public async Task Post_WithException_ThrowsException()
+        public async Task Post_WithException_RethrowsException()
         {
             // Arrange
             var product = new Product { Sku = "SKU123", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
-
             _mockConnection.Setup(conn => conn.State).Returns(System.Data.ConnectionState.Closed);
             _mockConnection.Setup(conn => conn.Open()).Throws(new SqlException());
 

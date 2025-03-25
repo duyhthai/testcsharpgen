@@ -7,49 +7,45 @@ using Xunit;
 
 public class ProductControllerTests
 {
-    private readonly Mock<SqlConnection> _mockConnection;
-    private readonly Mock<IDapper> _mockDapper;
-    private readonly ProductController _controller;
+    private readonly Mock<IConfiguration> _configurationMock;
+    private readonly string _connectionString;
 
     public ProductControllerTests()
     {
-        _mockConnection = new Mock<SqlConnection>();
-        _mockDapper = new Mock<IDapper>();
-        _controller = new ProductController();
-        _controller.DatabaseContext = _mockConnection.Object;
-        _controller.Dapper = _mockDapper.Object;
+        _configurationMock = new Mock<IConfiguration>();
+        _connectionString = "TestConnectionString";
+        _configurationMock.Setup(c => c.GetSection("ConnectionStrings").Value).Returns(_connectionString);
     }
 
     [Fact]
     public async Task Put_WithInvalidId_ThrowsArgumentException()
     {
         // Arrange
-        int invalidId = -1;
+        var controller = new ProductController(_configurationMock.Object);
         var product = new Product { Sku = "SKU123", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => _controller.Put(invalidId, product));
+        await Assert.ThrowsAsync<ArgumentException>(() => controller.Put(-1, product));
     }
 
     [Fact]
     public async Task Put_WithNullProduct_ThrowsArgumentNullException()
     {
         // Arrange
-        int validId = 1;
-        Product nullProduct = null;
+        var controller = new ProductController(_configurationMock.Object);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _controller.Put(validId, nullProduct));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => controller.Put(1, null));
     }
 
     [Fact]
     public async Task Put_WithEmptySku_ThrowsArgumentException()
     {
         // Arrange
-        int validId = 1;
+        var controller = new ProductController(_configurationMock.Object);
         var product = new Product { Sku = "", Content = "Content", Price = 100, IsActive = true, ImageUrl = "image.jpg" };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => _controller.Put(validId, product));
+        await Assert.ThrowsAsync<ArgumentException>(() => controller.Put(1, product));
     }
 }

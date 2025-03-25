@@ -1,49 +1,54 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
+using Microsoft.OpenApi.Models;
+using System.Net;
 
-public class WebApplicationTests
+public class EdgeTests
 {
     [Fact]
-    public void Test_WebApplication_Builder_ConfiguresServices()
+    public async Task Should_EnableSwagger_When_EnvironmentIsDevelopment()
     {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
         // Arrange
-        var services = new ServiceCollection();
-        builder.Services = services;
+        var builder = WebApplication.CreateBuilder(new string[] { "--environment Development" });
+        builder.Services.AddControllers();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+
+        var app = builder.Build();
 
         // Act
-        builder.ConfigureServices();
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
 
         // Assert
-        Assert.Collection(services,
-            service => Assert.Equal(typeof(MvcServiceCollectionExtensions), service.ImplementationType),
-            service => Assert.Equal(typeof(EndpointsApiExplorerServiceCollectionExtensions), service.ImplementationType),
-            service => Assert.Equal(typeof(SwaggerGenServiceCollectionExtensions), service.ImplementationType));
+        var response = await app.SendAsync("GET", "/swagger/index.html");
+        response.EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithNullActionThrowsException()
+    public void Should_DisableSwagger_When_EnvironmentIsNotDevelopment()
     {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
         // Arrange
+        var builder = WebApplication.CreateBuilder(new string[] { "--environment Production" });
+        builder.Services.AddControllers();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
+
         var app = builder.Build();
 
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => app.MapControllers(null));
-    }
+        // Act
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+        }
 
-    [Fact]
-    public void Test_WebApplication_Builder_ConfiguresEndpointsWithEmptyPathThrowsException()
-    {
-        var builder = WebApplication.CreateBuilder(new string[] { });
-
-        // Arrange
-        var app = builder.Build();
-
-        // Act & Assert
-        Assert.Throws<ArgumentException>(() => app.MapControllers(""));
+        // Assert
+        var response = app.SendAsync("GET", "/swagger/index.html").Result;
+        Assert.Null(response);
     }
 }
