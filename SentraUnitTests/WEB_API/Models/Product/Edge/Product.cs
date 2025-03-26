@@ -41,8 +41,8 @@ namespace WEB_API.Tests
             var product = new Product
             {
                 Id = int.MaxValue,
-                Sku = new string('A', 255),
-                Content = new string('B', 255),
+                Sku = new string('A', 100),
+                Content = new string('B', 1000),
                 Price = float.MaxValue,
                 DiscountPrice = float.MaxValue,
                 IsActive = false,
@@ -53,8 +53,8 @@ namespace WEB_API.Tests
 
             // Act & Assert
             Assert.Equal(int.MaxValue, product.Id);
-            Assert.Equal(new string('A', 255), product.Sku);
-            Assert.Equal(new string('B', 255), product.Content);
+            Assert.Equal(new string('A', 100), product.Sku);
+            Assert.Equal(new string('B', 1000), product.Content);
             Assert.Equal(float.MaxValue, product.Price);
             Assert.Equal(float.MaxValue, product.DiscountPrice);
             Assert.False(product.IsActive);
