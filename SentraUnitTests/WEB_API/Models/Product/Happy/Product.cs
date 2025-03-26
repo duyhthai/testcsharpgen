@@ -49,7 +49,7 @@ public class ProductTests
             Price = 29.99f,
             DiscountPrice = 19.99f,
             IsActive = true,
-            ImageUrl = "http://example.com/discount_image.jpg",
+            ImageUrl = "http://example.com/discount-image.jpg",
             ViewCount = 5,
             CreatedAt = DateTime.Now
         };
@@ -65,7 +65,7 @@ public class ProductTests
         Assert.AreEqual(29.99f, result.Price);
         Assert.AreEqual(19.99f, result.DiscountPrice.Value);
         Assert.IsTrue(result.IsActive);
-        Assert.AreEqual("http://example.com/discount_image.jpg", result.ImageUrl);
+        Assert.AreEqual("http://example.com/discount-image.jpg", result.ImageUrl);
         Assert.AreEqual(5, result.ViewCount);
         Assert.IsNotEmpty(result.CreatedAt);
     }
