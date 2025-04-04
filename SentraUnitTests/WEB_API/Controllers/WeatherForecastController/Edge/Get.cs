@@ -1,21 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 public class WeatherForecastControllerTests
 {
     [Fact]
-    public void Get_ReturnsFiveWeatherForecasts()
+    public void Get_ReturnsTenWeatherForecasts()
     {
         // Arrange
         var controller = new WeatherForecastController();
 
         // Act
-        var result = controller.Get().ToList();
+        var result = controller.Get() as IActionResult;
+        var forecasts = result.Value as IEnumerable<WeatherForecast>;
 
         // Assert
-        Assert.Equal(5, result.Count);
+        Assert.NotNull(forecasts);
+        Assert.Equal(10, forecasts.Count());
     }
 
     [Fact]
@@ -23,26 +24,28 @@ public class WeatherForecastControllerTests
     {
         // Arrange
         var controller = new WeatherForecastController();
-        var result = controller.Get().ToList();
+        var result = controller.Get() as IActionResult;
+        var forecasts = result.Value as IEnumerable<WeatherForecast>;
 
         // Act & Assert
-        for (int i = 0; i < result.Count - 1; i++)
+        for (int i = 0; i < forecasts.Count(); i++)
         {
-            Assert.True(result[i].Date < result[i + 1].Date);
+            Assert.Equal(DateTime.Now.AddDays(i + 1), forecasts.ElementAt(i).Date);
         }
     }
 
     [Fact]
-    public void Get_ForecastSummariesAreNotEmpty()
+    public void Get_ForecastTemperaturesAreInRange()
     {
         // Arrange
         var controller = new WeatherForecastController();
-        var result = controller.Get().ToList();
+        var result = controller.Get() as IActionResult;
+        var forecasts = result.Value as IEnumerable<WeatherForecast>;
 
         // Act & Assert
-        foreach (var forecast in result)
+        foreach (var forecast in forecasts)
         {
-            Assert.NotEmpty(forecast.Summary);
+            Assert.InRange(forecast.TemperatureC, -30, 65);
         }
     }
 }
