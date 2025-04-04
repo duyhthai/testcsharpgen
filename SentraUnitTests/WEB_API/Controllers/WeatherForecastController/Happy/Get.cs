@@ -5,7 +5,7 @@ using Xunit;
 public class WeatherForecastControllerTests
 {
     [Fact]
-    public void Get_ReturnsFiveWeatherForecasts()
+    public void Get_ReturnsTenWeatherForecasts()
     {
         // Arrange
         var controller = new WeatherForecastController();
@@ -16,7 +16,7 @@ public class WeatherForecastControllerTests
 
         // Assert
         Assert.NotNull(forecasts);
-        Assert.Equal(5, forecasts.Count());
+        Assert.Equal(10, forecasts.Count());
     }
 
     [Fact]
@@ -27,7 +27,8 @@ public class WeatherForecastControllerTests
         var result = controller.Get() as IActionResult;
         var forecasts = result.Value as IEnumerable<WeatherForecast>;
 
-        // Act & Assert
+        // Assert
+        Assert.NotNull(forecasts);
         for (int i = 0; i < forecasts.Count(); i++)
         {
             Assert.Equal(DateTime.Now.AddDays(i + 1), forecasts.ElementAt(i).Date);
@@ -35,17 +36,18 @@ public class WeatherForecastControllerTests
     }
 
     [Fact]
-    public void Get_ForecastSummariesAreNotEmpty()
+    public void Get_ForecastTemperaturesAreInRange()
     {
         // Arrange
         var controller = new WeatherForecastController();
         var result = controller.Get() as IActionResult;
         var forecasts = result.Value as IEnumerable<WeatherForecast>;
 
-        // Act & Assert
+        // Assert
+        Assert.NotNull(forecasts);
         foreach (var forecast in forecasts)
         {
-            Assert.NotEmpty(forecast.Summary);
+            Assert.InRange(forecast.TemperatureC, -30, 65);
         }
     }
 }
