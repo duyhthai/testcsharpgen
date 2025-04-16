@@ -12,4 +12,8 @@ public abstract class BaseEntity<TId>
     public abstract int GetInt() {
         return 2;
     }
+
+    public abstract string GetString() {
+        return "Hello";
+    }
 }
