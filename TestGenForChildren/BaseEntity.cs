@@ -10,7 +10,7 @@ public abstract class BaseEntity<TId>
     public abstract void DisplayInfo();
 
     public abstract int GetInt() {
-        return 2;
+        return 3;
     }
 
     public abstract string GetString() {
@@ -18,6 +18,6 @@ public abstract class BaseEntity<TId>
     }
 
     public abstract string GetStr() {
-        return "Hello2";
+        return "Hello GetStr";
     }
 }
