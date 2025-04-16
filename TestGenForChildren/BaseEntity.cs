@@ -10,6 +10,6 @@ public abstract class BaseEntity<TId>
     public abstract void DisplayInfo();
 
     public abstract int GetInt() {
-        return 1;
+        return 2;
     }
 }
