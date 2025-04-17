@@ -13,11 +13,22 @@ public abstract class ApiControllerBase : ControllerBase
 
     protected ISender Mediator => _mediator ??= HttpContext.RequestServices.GetRequiredService<ISender>();
 
-    protected async Task<ActionResult<TResponse>> HandleRequest<TResponse>(IRequest<OperationResult<TResponse>> request)
+    protected async Task<IActionResult> HandleRequest(IRequest<OperationResult> request, IMediator? testMediator = null)
     {
-        var result = await Mediator.Send(request);
+        // Optional logging or test inspection point
+        Console.WriteLine($"Handling request of type: {request.GetType().Name}");
 
-        return ConvertToActionResult(result ?? throw new InvalidOperationException());
+        // Use test mediator if provided
+        var mediatorToUse = testMediator ?? Mediator;
+
+        var result = await mediatorToUse.Send(request);
+
+        if (result == null)
+        {
+            throw new InvalidOperationException("Mediator returned null result for the request.");
+        }
+
+        return ConvertToActionResult(result);
     }
 
     protected async Task<IActionResult> HandleRequest(IRequest<OperationResult> request)
