@@ -10,6 +10,6 @@ class Animal {
     }
 
     public function speak() {
-        echo "{$this->name} makes a sound.\n";
+        echo "{$this->name} makes a loud sound.\n";
     }
 }
