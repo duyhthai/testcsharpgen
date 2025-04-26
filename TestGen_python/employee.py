@@ -4,7 +4,7 @@ class Employee:
         self.salary = salary
 
     def work(self):
-        print(f"{self.name} is working.")
+        print(f"{self.name} is working on something.")
 
     def get_details(self):
         return f"Employee: {self.name}, Salary: ${self.salary}"
