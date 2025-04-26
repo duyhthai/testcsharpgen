@@ -4,7 +4,7 @@ public abstract class BaseEntity<TId>
     
     protected BaseEntity(TId id)
     {
-        Id = id + 2;
+        Id = id + 1;
     }
     
     public abstract void DisplayInfo();
