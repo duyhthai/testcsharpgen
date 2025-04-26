@@ -13,6 +13,10 @@ public abstract class BaseEntity<TId>
         return 3;
     }
 
+    public abstract int GetFloat() {
+        return 3.0;
+    }
+
     public abstract string GetString() {
         return "Hello";
     }
