@@ -8,7 +8,7 @@ export class Employee {
   }
 
   work(): void {
-    console.log(`${this.name} is working on something.`);
+    console.log(`${this.name} is working.`);
   }
 
   getDetails(): string {
